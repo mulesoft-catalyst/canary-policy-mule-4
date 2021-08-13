@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xmlns="http://www.mulesoft.org/schema/mule/core"
+xmlns:os="http://www.mulesoft.org/schema/mule/os"
+xmlns:http="http://www.mulesoft.org/schema/mule/http"
+xmlns:http-policy="http://www.mulesoft.org/schema/mule/http-policy"
+xmlns:http-transform="http://www.mulesoft.org/schema/mule/http-policy-transform"
+xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core
+http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http
+http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/http-policy
+http://www.mulesoft.org/schema/mule/http-policy/current/mule-http-policy.xsd
+http://www.mulesoft.org/schema/mule/http-policy-transform
+http://www.mulesoft.org/schema/mule/http-policy-transform/current/mule-http-policy-transform.xsd
+http://www.mulesoft.org/schema/mule/os
+http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+
+    <!-- Object Store configuration -->
+    {{#if overrideOsSettings}}
+        <os:object-store name="traffic" persistent="{{{osPersistent}}}" entryTtl="{{{osTtl}}}" entryTtlUnit="{{{osTtlUnit}}}" />
+    {{else}}
+        <os:object-store name="traffic" persistent="true" entryTtl="1" entryTtlUnit="HOURS" />
+    {{/if}}
+
+    <http:request-config name="http-request-config" basePath="/" enableCookies="false">
+        <http:request-connection host="{{{host}}}" port="{{{port}}}"
+                                 protocol="{{{protocol}}}"/>
+    </http:request-config>
+
+
+    <http-policy:proxy name="{{{policyId}}}-custom-policy">
+        <http-policy:source>
+            <set-variable value='{{{weights}}}' variableName="weights"/>
+            <try>
+              <!-- Checking current URL state -->
+              <os:retrieve key="currentUrl" target="currentUrl" objectStore="traffic"/>
+              <error-handler>
+                 <on-error-continue type="OS:KEY_NOT_FOUND" logException="false"> 
+                    <logger message="Non existing previous entries in traffic OS for currentUrl. Assuming this is the first call." level="DEBUG" category="com.mule.policies.canary" />
+                    <set-variable value='#[vars.weights[0].url]' variableName="currentUrl"/>
+                 </on-error-continue>
+              </error-handler> 
+            </try>             
+            <try>
+              <!-- Checking current URL state -->
+              <os:retrieve key="currentRouted" target="currentRouted" objectStore="traffic"/>
+              <error-handler>
+                 <on-error-continue type="OS:KEY_NOT_FOUND" logException="false"> 
+                    <logger message="Non existing previous entries in traffic OS for currentRouted. Assuming this is the first call." level="DEBUG" category="com.mule.policies.canary" />                  
+                    <set-variable value='#[0]' variableName="currentRouted"/>
+                 </on-error-continue>
+              </error-handler> 
+            </try> 
+          <!-- Decide URL to route the traffic to -->
+
+          <logger message='#[%dw 2.0 output application/json --- attributes]' level="DEBUG" category="com.mule.policies.canary" />                  
+          <set-variable value='#[%dw 2.0
+output application/json
+import * from dw::core::Arrays
+fun calculateMaximumAdmitedRequestsToCurrent()= (getCurrentWeightDetails(vars.weights).weight[0]/10)
+fun getCurrentWeightDetails(item)=item filter (value, index) -> (value.url as String == vars.currentUrl)
+fun getCurrentPositionInArray(weights)=weights indexWhere (item) -> item.url == getCurrentWeightDetails(weights)[0].url
+fun getNextWeightDetails(position)=vars.weights[(position+1)] default vars.weights[0]
+fun getFirstPositionInArray(weights)=weights[0]
+---
+if ((vars.currentRouted) >= calculateMaximumAdmitedRequestsToCurrent())
+    getNextWeightDetails(getCurrentPositionInArray(vars.weights)) ++ {currentRouted: 0}
+else
+    getCurrentWeightDetails(vars.weights)[0] ++ {currentRouted: vars.currentRouted}]' variableName="destination"/>
+        <!--<http-policy:execute-next />-->
+
+        <http:request config-ref="http-request-config" method="#[attributes.method]"
+                      path="#[vars.destination.url]">
+            <!--<http:headers>#[attributes.headers]</http:headers>-->
+            <http:uri-params>#[attributes.uriParams]</http:uri-params>
+            <http:query-params>#[attributes.queryParams]</http:query-params>
+            <http:response-validator>
+                <http:success-status-code-validator values="0..599"/>
+            </http:response-validator>
+        </http:request>
+
+          <logger message="Updating values in traffic OS for next call" level="DEBUG" category="com.mule.policies.canary" />
+          <os:store key="currentRouted" objectStore="traffic">
+             <os:value>
+                 #[(vars.destination.currentRouted+1)]
+             </os:value>
+          </os:store>
+          <set-variable value='#[vars.destination.url]' variableName="currentUrl"/>
+          <os:store key="currentUrl" objectStore="traffic">
+             <os:value>
+                 #[vars.currentUrl]
+             </os:value>
+          </os:store>
+        </http-policy:source>
+    </http-policy:proxy>
+</mule>
