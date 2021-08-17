@@ -28,7 +28,7 @@ If you want to skip the extra layer added by the proxy, you can always apply the
 
 But this approach may lead to a management nightmare, where deprecation and retirement of APIs become an almost impossible task. See ["Deprecation and Retirement"](#Deprecation and Retirement) section.
 
-### Deprecation and retirement
+### Deprecation and Retirement
 Ask yourself: What do I want to do to discontinue the original version of my API when the Canary version has been tested and is ready to be used as current version?
 Here are a series of strategies for that end:
 - "Increase the weight of my Canary version to 100%, so that the traffic is only redirected there". This is an option that the only thing it achieves is an ease in the configuration, but under no point of view it is the optimal solution, since adopted in a proxy, it will generate an inconsistency between the implementation url configured in the proxy and the real url. Even worse if this strategy is used when applying the policy on the original API (no proxy), since this component will not only consume unnecessary resources, but it cannot be removed to ensure the existence of the policy that makes the routing.
