@@ -26,7 +26,7 @@ If you want to skip the extra layer added by the proxy, you can always apply the
 
 ![](./images/deployment-nr.png "Deployment Architecture - Not Recommended")
 
-But this approach may lead to a management nightmare, where deprecation and retirement of APIs become an almost impossible task. See ["Deprecation and Retirement"](#"Deprecation and Retirement") section.
+But this approach may lead to a management nightmare, where deprecation and retirement of APIs become an almost impossible task. See ["Deprecation and Retirement"](#Deprecation and Retirement) section.
 
 ### Deprecation and Retirement
 Ask yourself: What do I want to do to discontinue the original version of my API when the Canary version has been tested and is ready to be used as current version?
