@@ -20,7 +20,7 @@ There are no limitations imposed by the use of this policy regarding the deploym
 
 ![](./images/deployment.png "Deployment Architecture")
 
-From the above, a proxy could is deployed on top of both versions (original and canary) in order to centralize communication, providing an abstraction and improving understanding from the point of view of networking and traffic management. Please see ["Limitations"](###Limitations) section.
+From the above, a proxy could is deployed on top of both versions (original and canary) in order to centralize communication, providing an abstraction and improving understanding from the point of view of networking and traffic management. Please see ["Limitations"](#Limitations) section.
 
 If you want to skip the extra layer added by the proxy, you can always apply the policy on top of the original application:
 
