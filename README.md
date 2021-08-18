@@ -4,7 +4,7 @@ A custom policy to perform canary releases, intercepting the incoming calls and 
   - Enable session stickiness (TO-DO), to keep record of previous redirections based on a customizable header
 
 ### Why?
-A canary release helps organizations to reduce the risks of introducing new versions of a software by incrementally rolling out traffic to the new version, improving the observability and limiting the impact of the new components over the existing service.
+A canary release helps organizations to reduce the risks of introducing new versions of a software by incrementally rolling out traffic to the new version, improving the [observability](https://en.wikipedia.org/wiki/Observability) and limiting the impact of the new components over the existing service.
 
 ### How?
 For a canary release to exist, the following elements should be present:
@@ -20,13 +20,13 @@ There are no limitations imposed by the use of this policy regarding the deploym
 
 ![](./images/deployment.png "Deployment Architecture")
 
-From the above, a proxy is deployed on top of both versions (original and canary) in order to centralize communication, providing an abstraction and improving understanding from the point of view of networking and traffic management. Please see ["Limitations"](###Limitations) and ["Known Issues"](###Known Issues) sections.
+From the above, a proxy is deployed on top of both versions (original and canary) in order to centralize communication, providing an abstraction and improving understanding from the point of view of networking and traffic management. Please see ["Limitations"](###Limitations) and ["Known Issues"](###Known-Issues) sections.
 
 If you want to skip the extra layer added by the proxy, you can always apply the policy on top of the original application:
 
 ![](./images/deployment-nr.png "Deployment Architecture - Not Recommended")
 
-But this approach may lead to a management nightmare, where deprecation and retirement of APIs become an almost impossible task. See "Deprecation and Retirement" section.
+But this approach may lead to a management nightmare, where deprecation and retirement of APIs become an almost impossible task. See ["Deprecation and Retirement"](###Deprecation-and-retirement) section.
 
 ### Deprecation and retirement
 Ask yourself: What do I want to do to discontinue the original version of my API when the Canary version has been tested and is ready to be used as current version?
