@@ -59,7 +59,6 @@ http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
   ] ]" variableName="weights"/>
             <logger message='#[%dw 2.0 output application/json --- vars.weights]' level="DEBUG" category="com.mule.policies.canary" />
             <try>
-              <!-- Checking current URL state -->
               <os:retrieve key="currentUrl" target="currentUrl" objectStore="traffic"/>
               <error-handler>
                  <on-error-continue type="OS:KEY_NOT_FOUND" logException="false">
@@ -69,7 +68,6 @@ http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
               </error-handler>
             </try>
             <try>
-              <!-- Checking current URL state -->
               <os:retrieve key="currentRouted" target="currentRouted" objectStore="traffic"/>
               <error-handler>
                  <on-error-continue type="OS:KEY_NOT_FOUND" logException="false">
@@ -79,7 +77,6 @@ http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
               </error-handler>
             </try>
           <!-- Decide URL to route the traffic to -->
-
           <logger message='#[%dw 2.0 output application/json --- attributes]' level="DEBUG" category="com.mule.policies.canary" />
           <set-variable value='#[%dw 2.0
 output application/json
@@ -94,8 +91,6 @@ if ((vars.currentRouted) >= calculateMaximumAdmitedRequestsToCurrent())
     getNextWeightDetails(getCurrentPositionInArray(vars.weights)) ++ {currentRouted: 0}
 else
     getCurrentWeightDetails(vars.weights)[0] ++ {currentRouted: vars.currentRouted}]' variableName="destination"/>
-        <!--<http-policy:execute-next />-->
-        <logger message="#[%dw 2.0 output application/json --- choice: vars.destination.url contains ( vars.protocol ++'://'++ vars.host ++':'++ vars.port ++ vars.path )]" level="DEBUG" category="com.mule.policies.canary" />
         <choice>
           <when expression="#[%dw 2.0
                               output application/json
@@ -108,7 +103,6 @@ else
                                     import * from dw::core::URL
                                     ---
                                     parseURI(vars.destination.url).path]">
-                  <!--<http:headers>#[attributes.headers]</http:headers>-->
                   <http:uri-params>#[attributes.uriParams]</http:uri-params>
                   <http:query-params>#[attributes.queryParams]</http:query-params>
                   <http:response-validator>
@@ -124,7 +118,6 @@ else
                                   import * from dw::core::URL
                                   ---
                                   parseURI(vars.destination.url).path]">
-                <!--<http:headers>#[attributes.headers]</http:headers>-->
                 <http:uri-params>#[attributes.uriParams]</http:uri-params>
                 <http:query-params>#[attributes.queryParams]</http:query-params>
                 <http:response-validator>

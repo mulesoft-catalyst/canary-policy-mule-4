@@ -1,4 +1,4 @@
-# canary-policy-mule-4
+# Canary Policy for Mule 4
 A custom policy to perform canary releases, intercepting the incoming calls and deciding which implementation URL to route the call to. Applying this policy to your API or proxy you would be able to:
   - Define an array of endpoints, with their weights
   - Enable session stickiness (TO-DO), to keep record of previous redirections based on a customizable header
@@ -20,15 +20,15 @@ There are no limitations imposed by the use of this policy regarding the deploym
 
 ![](./images/deployment.png "Deployment Architecture")
 
-From the above, a proxy could is deployed on top of both versions (original and canary) in order to centralize communication, providing an abstraction and improving understanding from the point of view of networking and traffic management. Please see ["Limitations"](#Limitations) section.
+From the above, a proxy could is deployed on top of both versions (original and canary) in order to centralize communication, providing an abstraction and improving understanding from the point of view of networking and traffic management. Please see ["Limitations"](###Limitations) section.
 
 If you want to skip the extra layer added by the proxy, you can always apply the policy on top of the original application:
 
 ![](./images/deployment-nr.png "Deployment Architecture - Not Recommended")
 
-But this approach may lead to a management nightmare, where deprecation and retirement of APIs become an almost impossible task. See "Deprecation and Retirement" section.
+But this approach may lead to a management nightmare, where deprecation and retirement of APIs become an almost impossible task. See ["Deprecation and Retirement"](###Deprecation and Retirement) section.
 
-### Deprecation and Retirement
+### Deprecation and retirement
 Ask yourself: What do I want to do to discontinue the original version of my API when the Canary version has been tested and is ready to be used as current version?
 Here are a series of strategies for that end:
 - "Increase the weight of my Canary version to 100%, so that the traffic is only redirected there". This is an option that the only thing it achieves is an ease in the configuration, but under no point of view it is the optimal solution, since adopted in a proxy, it will generate an inconsistency between the implementation url configured in the proxy and the real url. Even worse if this strategy is used when applying the policy on the original API (no proxy), since this component will not only consume unnecessary resources, but it cannot be removed to ensure the existence of the policy that makes the routing.
@@ -60,6 +60,15 @@ The following commands are required during development phase
 | Package policy | mvn clean install |
 | Publish to Exchange - Make sure to update the pom.xml file with your org ID - | mvn deploy |
 
+### Debugging
+The following package can be added to the log4j2.xml configuration ```com.mule.policies.canary```
+In Debug mode, it will print the following checkpoints:
+- Weights array print. This is important to understand how the array was created based on the input parameters
+- Current status of the Traffic Object Store, used to keep track of the metadata of the requests (only if is the first time you're creating it)
+- Incoming Request attributes, before routing the endpoints
+- Destination Endpoint. Wether it is the original or the canary URL
+- Flag indicating the Traffic Object Store will be updated
+
 ### Limitations
 NOTE: The recommended approach to manage Canary Releases should be having a third party component, outside Anypoint Platform, specially designed to handle this kind of needs. For instance, nginx provides a module called [split clients](https://nginx.org/en/docs/http/ngx_http_split_clients_module.html?_ga=2.76046677.1103157284.1620664242-1521291711.1620664242 ), useful to assign percentages of traffic that we want to redirect to defined clients (hosts). The solution provided here is a custom solution, provided by Professional Services and and that may not have official product support.
 
@@ -70,6 +79,10 @@ If you want to use this solution anyway, this approach leads to the following pr
 - Extra component is required (proxy), adding more hops to the process -OPTIONAL if proxy approach was chosen-. In a typical API-Led approach, having an additional step on top of the existing 3 layers might be counterproductive with defined SLAs and SLOs
 - Adds environment promotion complexity as part of the CI/CD pipelines
 - Deprecation and Retirement becomes a time consuming task (more than usual!)
+- The underlying proxy logic is never used. ```<http-policy:execute-next />``` is never invoked.
+
+### Known Issues
+When applied to a Mule proxy, the execution of the logic is carried out twice for the same request. This does not happen when the policy is applied to a mule app. This issue is under review.
 
 ### Benchmark
 
@@ -103,8 +116,6 @@ TO-DO
 
 ##### Results
 TO-DO
-
-
 
 
 #### Test #2
