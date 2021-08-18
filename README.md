@@ -48,8 +48,22 @@ After publishing to Exchange, follow these steps to apply the policy to an exist
 
 | Parameter | Purpose |
 | ------ | ------ |
-| Endpoints | Details the paths and weights of the multiple versions |
-|  |  |
+| Host (Original) | Details the host for the original version. This should be the same as the one set on the implementation url if using a proxy |
+| Port (Original) | Details the port for the original version |
+| Protocol (Original) | Details the protocol for the original version |
+| Path (Original) | Details the path for the original version |
+| Weight (Original) | Details the weight for the original version. Represents a percentage that is calculated taking into account a sample of 10 requests. For example: 50 indicates that 5 requests out of 10 will be routed to this endpoint |
+| Host (Canary) | Details the host for the canary version |
+| Port (Canary) | Details the port for the canary version |
+| Protocol (Canary) | Details the protocol for the canary version |
+| Path (Canary) | Details the path for the canary version |
+| Weight (Canary) | Details the weight for the canary version. Represents a percentage that is calculated taking into account a sample of 10 requests. For example: 50 indicates that 5 requests out of 10 will be routed to this endpoint |
+| sessionStickinessSupport | Indicates if the session stickiness capability is enabled (TO-DO) |
+| Session Stickiness Header Expression | If session stickiness is enabled, this DW expression represents how to access the header that contains the key used to track the session stickiness (TO-DO) |
+| Override Object Store Settings? | Select this option to override the default Object Store. The default is false. |
+| Is the Object Store persistent? | If checked, use a persistent Object Store ) |
+| Object Store's entry TTL | The entry timeout. Default value is 1 (hour) ) |
+| Object Store's entry TTL unit | The time unit. Default value is "HOURS". ) |
 
 #### Development
 
