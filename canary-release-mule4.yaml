@@ -133,10 +133,10 @@ configuration:
     defaultValue: false
   - propertyName: osPersistent
     name: Is the Object Store persistent?
-    description: Select this option to enable a persistent Object Store. The default is false.
+    description: Select this option to enable a persistent Object Store. The default is true.
     type: boolean
     optional: true
-    defaultValue: false
+    defaultValue: true
     dependsOnKey: overrideOsSettings
     dependsOnValue: true
   - propertyName: osTtl

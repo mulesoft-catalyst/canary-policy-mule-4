@@ -61,7 +61,7 @@ After publishing to Exchange, follow these steps to apply the policy to an exist
 | sessionStickinessSupport | Indicates if the session stickiness capability is enabled (TO-DO) |
 | Session Stickiness Header Expression | If session stickiness is enabled, this DW expression represents how to access the header that contains the key used to track the session stickiness (TO-DO) |
 | Override Object Store Settings? | Select this option to override the default Object Store. The default is false. |
-| Is the Object Store persistent? | If checked, use a persistent Object Store ) |
+| Is the Object Store persistent? | If checked, uses a persistent Object Store ) |
 | Object Store's entry TTL | The entry timeout. Default value is 1 (hour) ) |
 | Object Store's entry TTL unit | The time unit. Default value is "HOURS". ) |
 
