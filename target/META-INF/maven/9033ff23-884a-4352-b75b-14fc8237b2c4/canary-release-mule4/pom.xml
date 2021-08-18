@@ -6,7 +6,7 @@
 
     <groupId>9033ff23-884a-4352-b75b-14fc8237b2c4</groupId>
     <artifactId>canary-release-mule4</artifactId>
-    <version>2.0.20-SNAPSHOT</version>
+    <version>3.0.11-SNAPSHOT</version>
 
     <name>canary-release-mule4</name>
     <description>A custom policy to support canary releases</description>
@@ -15,14 +15,14 @@
 
     <properties>
         <mule.maven.plugin.version>3.3.6</mule.maven.plugin.version>
-        <exchange.url>https://maven.anypoint.mulesoft.com/api/v1/organizations/9033ff23-884a-4352-b75b-14fc8237b2c4/maven</exchange.url>
+        <exchange.url>https://maven.anypoint.mulesoft.com/api/v1/organizations/${project.groupId}/maven</exchange.url>
         <http.policy.transform.extension>3.1.0</http.policy.transform.extension>
         <os.version>1.1.1</os.version>
     </properties>
 
     <dependencies>
         <!-- This extension allows to easily update HTTP attributes from a policy -->
-        <!-- Full documentation: https://docs.mulesoft.com/api-manager/2.x/http-policy-transform -->     
+        <!-- Full documentation: https://docs.mulesoft.com/api-manager/2.x/http-policy-transform -->
         <dependency>
             <groupId>com.mulesoft.anypoint</groupId>
             <artifactId>mule-http-policy-transform-extension</artifactId>
@@ -35,7 +35,7 @@
                     <artifactId>mule-http-connector</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>     
+        </dependency>
         <dependency>
             <groupId>org.mule.connectors</groupId>
             <artifactId>mule-objectstore-connector</artifactId>
@@ -43,7 +43,7 @@
             <classifier>mule-plugin</classifier>
         </dependency>
     </dependencies>
-         
+
     <build>
         <plugins>
             <plugin>

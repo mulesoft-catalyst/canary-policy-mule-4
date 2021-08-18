@@ -4,7 +4,7 @@
   ],
   "secureProperties": [],
   "redeploymentEnabled": true,
-  "name": "9033ff23-884a-4352-b75b-14fc8237b2c4:canary-release-mule4:2.0.20-SNAPSHOT",
+  "name": "9033ff23-884a-4352-b75b-14fc8237b2c4:canary-release-mule4:3.0.11-SNAPSHOT",
   "minMuleVersion": "4.1.1",
   "requiredProduct": "MULE_EE",
   "classLoaderModelLoaderDescriptor": {
@@ -18,7 +18,7 @@
       "classifier": "mule-policy",
       "artifactId": "canary-release-mule4",
       "type": "jar",
-      "version": "2.0.20-SNAPSHOT"
+      "version": "3.0.11-SNAPSHOT"
     }
   }
 }

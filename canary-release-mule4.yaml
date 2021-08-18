@@ -9,24 +9,16 @@ standalone: true
 requiredCharacteristics: []
 providedCharacteristics: []
 configuration:
-  - propertyName: weights
-    name: Endpoints
-    description: Accepts a DW expression array of endpoints defined as objects, where url identifies the destination urls and weight assign a percentage weight to each destination. Requires to set the original non-canary version at least. Non limited entries are accepted as long sum of weights do not exceed 100 (100%)
-    defaultValue: '#[{"url": "domain.com/api-name/v1/", "weight": 100}]'
-    type: expression
-    optional: false
-    sensitive: false
-    allowMultiple: false
   - propertyName: host
-    name: Host
-    description: Host for endpoints
+    name: Host (Original)
+    description: Host for original version
     defaultValue: 'localhost'
     type: string
     optional: false
     sensitive: false
     allowMultiple: false
   - propertyName: port
-    name: Port
+    name: Port (Original)
     description: Port
     defaultValue: 8081
     type: int
@@ -36,7 +28,7 @@ configuration:
     minimumValue: 0
     maximumValue: 65535
   - propertyName: protocol
-    name: Protocol
+    name: Protocol (Original)
     description: Protocol
     defaultValue: 'HTTPS'
     options:
@@ -49,6 +41,74 @@ configuration:
     optional: false
     sensitive: false
     allowMultiple: false
+  - propertyName: path
+    name: Path (Original)
+    description: Path for original version
+    defaultValue: '/api/v1/'
+    type: string
+    optional: false
+    sensitive: false
+    allowMultiple: false
+  - propertyName: weight
+    name: Weight (Original)
+    description: Weight
+    defaultValue: 50
+    type: int
+    optional: false
+    sensitive: false
+    allowMultiple: false
+    minimumValue: 5
+    maximumValue: 100
+  - propertyName: hostCanary
+    name: Host (Canary)
+    description: Host for original version
+    defaultValue: 'localhost'
+    type: string
+    optional: false
+    sensitive: false
+    allowMultiple: false
+  - propertyName: portCanary
+    name: Port (Canary)
+    description: Port
+    defaultValue: 8081
+    type: int
+    optional: false
+    sensitive: false
+    allowMultiple: false
+    minimumValue: 0
+    maximumValue: 65535
+  - propertyName: protocolCanary
+    name: Protocol (Canary)
+    description: Protocol
+    defaultValue: 'HTTPS'
+    options:
+    - name: HTTP
+      value: "HTTP"
+    - name: HTTPS
+      value: "HTTPS"
+    type: radio
+    defaultValue: HTTP
+    optional: false
+    sensitive: false
+    allowMultiple: false
+  - propertyName: pathCanary
+    name: Path (Canary)
+    description: Path for Canary version
+    defaultValue: '/api/v2/'
+    type: string
+    optional: false
+    sensitive: false
+    allowMultiple: false
+  - propertyName: weightCanary
+    name: Weight (Canary)
+    description: Weight
+    defaultValue: 50
+    type: int
+    optional: false
+    sensitive: false
+    allowMultiple: false
+    minimumValue: 5
+    maximumValue: 100
   - propertyName: sessionStickinessSupport
     name: Support Session Stickness?
     description: Select this option to support session stickiness using an HTTP header
