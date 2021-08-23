@@ -96,7 +96,7 @@ If you want to use this solution anyway, this approach leads to the following pr
 - The underlying proxy logic is never used. ```<http-policy:execute-next />``` is never invoked.
 
 ### Known Issues
-When applied to a Mule proxy, the execution of the logic is carried out twice for the same request. This does not happen when the policy is applied to a mule app. This issue is under review.
+When applied to a Mule proxy in Cloudhub, the execution of the logic is carried out twice for the same request. This does not happen when the policy is applied to a mule app. This issue is under review. Runtime Fabric and Hybrid (on-prem) deployment models handle the request successfully.
 
 ### Benchmark
 
