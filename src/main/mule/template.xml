@@ -23,6 +23,11 @@ http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
         <os:object-store name="traffic" persistent="true" entryTtl="1" entryTtlUnit="HOURS" />
     {{/if}}
 
+    <!-- Metrics Object Store configuration -->
+    {{#if captureUsageMetrics}}
+        <os:object-store name="metrics" persistent="{{{metricsOsPersistent}}}" entryTtl="{{{metricsOsTtl}}}" entryTtlUnit="{{{metricsOsTtlUnit}}}" />
+    {{/if}}
+
     <http:request-config name="http-request-config" basePath="/" enableCookies="false">
         <http:request-connection host="{{{host}}}" port="{{{port}}}"
                                  protocol="{{{protocol}}}"/>
@@ -35,6 +40,10 @@ http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
 
     <http-policy:proxy name="{{{policyId}}}-custom-policy">
         <http-policy:source>
+            {{#if captureUsageMetrics}}
+                <set-variable value="#[%dw 2.0 output application/java --- now()]" variableName="startTime"/>
+                <set-variable value="0" variableName="canary"/>
+            {{/if}}
             <set-variable value="{{{protocol}}}" variableName="protocol"/>
             <set-variable value="{{{host}}}" variableName="host"/>
             <set-variable value="{{{port}}}" variableName="port"/>
@@ -124,6 +133,9 @@ else
                     <http:success-status-code-validator values="0..599"/>
                 </http:response-validator>
             </http:request>
+            {{#if captureUsageMetrics}}
+                <set-variable value="1" variableName="canary"/>
+            {{/if}}
           </otherwise>
         </choice>
         <logger message="Updating values in traffic OS for next call" level="DEBUG" category="com.mule.policies.canary" />
@@ -138,6 +150,28 @@ else
                #[vars.currentUrl]
            </os:value>
         </os:store>
+        {{#if captureUsageMetrics}}
+                <set-variable value="#[%dw 2.0 output application/java --- now()]" variableName="endTime"/>
+                <async>
+                    <flow-ref name="store-metrics"/>
+                </async>
+        {{/if}}
       </http-policy:source>
     </http-policy:proxy>
+
+    <flow name="store-metrics">
+        <os:store key="{{{metricsOsIndex}}}" objectStore="metrics">
+            <os:value>
+               #[%dw 2.0
+                output application/java
+                ---
+                {
+                    correlationId: vars.correlationId,
+                    statusCode: attributes.statusCode,
+                    responseTimeMs: (vars.endTime - vars.startTime) as Number {unit: "milliseconds"},
+                    canary: vars.canary
+                }]
+           </os:value>
+        </os:store>
+    </flow>
 </mule>
