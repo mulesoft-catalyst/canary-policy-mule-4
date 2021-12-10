@@ -22,12 +22,6 @@ There are no limitations imposed by the use of this policy regarding the deploym
 
 From the above, a proxy is deployed on top of both versions (original and canary) in order to centralize communication, providing an abstraction and improving understanding from the point of view of networking and traffic management. Please see ["Limitations"](###Limitations) and ["Known Issues"](###Known-Issues) sections.
 
-If you want to skip the extra layer added by the proxy, you can always apply the policy on top of the original application:
-
-![](./images/deployment-nr.png "Deployment Architecture - Not Recommended")
-
-But this approach may lead to a management nightmare, where deprecation and retirement of APIs become an almost impossible task. See ["Deprecation and Retirement"](###Deprecation-and-retirement) section.
-
 ### Deprecation and retirement
 Ask yourself: What do I want to do to discontinue the original version of my API when the Canary version has been tested and is ready to be used as current version?
 Here are a series of strategies for that end:
@@ -97,53 +91,6 @@ If you want to use this solution anyway, this approach leads to the following pr
 
 ### Known Issues
 When applied to a Mule proxy in Cloudhub, the execution of the logic is carried out twice for the same request. This does not happen when the policy is applied to a mule app. This issue is under review. Runtime Fabric and Hybrid (on-prem) deployment models handle the request successfully.
-
-### Benchmark
-
-#### Application config
-
-| Deployment Model | Runtime Version | Worker Size | Workers |
-| ------ | ------ | ------ | ------ |
-| CloudHub (US East - Ohio - ) | 4.3.0 | 0.1 | 1 |
-
-
-#### Test #0 -  NO policy applied -
-
-##### Test suite configuration
-TO-DO
-
-
-##### Results
-
-| Avg  | Median | Min | Max | Error Rate | Throughput |
-| ------ | ------ | ------ | ------ | ------ | ------ |
-|  |  |  |  |  |  |
-
-#### Test #1
-
-##### Policy configuration
-TO-DO
-
-##### Test suite configuration
-TO-DO
-
-
-##### Results
-TO-DO
-
-
-#### Test #2
-
-##### Policy configuration
-TO-DO
-
-
-##### Test suite configuration
-TO-DO
-
-
-##### Results
-TO-DO
 
 
 ### Contribution
