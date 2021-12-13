@@ -2,6 +2,8 @@
 A custom policy to perform canary releases, intercepting the incoming calls and deciding which implementation URL to route the call to. Applying this policy to your API or proxy you would be able to:
   - Define an array of endpoints, with their weights
   - Enable session stickiness (TO-DO), to keep record of previous redirections based on a customizable header
+  - Capture metrics for the incoming events
+  - Get the stored metrics
 
 ### Why?
 A canary release helps organizations to reduce the risks of introducing new versions of a software by incrementally rolling out traffic to the new version, improving the [observability](https://en.wikipedia.org/wiki/Observability) and limiting the impact of the new components over the existing service.
@@ -22,7 +24,7 @@ There are no limitations imposed by the use of this policy regarding the deploym
 
 From the above, a proxy is deployed on top of both versions (original and canary) in order to centralize communication, providing an abstraction and improving understanding from the point of view of networking and traffic management. Please see ["Limitations"](###Limitations) and ["Known Issues"](###Known-Issues) sections.
 
-If you want to skip the extra layer added by the proxy, you can always apply the policy on top of the original application:
+If you want to skip the extra layer added by the proxy, you can always apply the policy on top of the original (baseline) application:
 
 ![](./images/deployment-nr.png "Deployment Architecture - Not Recommended")
 
@@ -83,6 +85,43 @@ In Debug mode, it will print the following checkpoints:
 - Destination Endpoint. Wether it is the original or the canary URL
 - Flag indicating the Traffic Object Store will be updated
 
+### Metrics
+The policy incorporates the possibility of collecting usage metrics to later be used in a Canary Analysis process.
+
+#### To enable the Metrics
+- Enable "Capture Raw Usage Metrics?" by clicking on the radio button, while applying the policy
+- Complete the extra fields enabled when you clicked on the above:
+
+| Parameter (Internal Name)| UI Name | Purpose |
+| ------ | ------ | ------ |
+| metricsOsIndex | Index used to store the metrics | Index used to store the metrics. By default uses a unique ID per event |
+| metricsOsPersistent | Is the Metrics Object Store persistent? | Flag to configure persistent OS |
+| metricsOsTtl | Metrics Object Store entry TTL | Time to live for the OS (this is applicable either for In-memory and Persistent OS) |
+| metricsOsTtlUnit | Metrics Object Store entry TTL unit | Time unit for the above TTL |
+
+#### To capture the stored Metrics
+Simply send a GET to the API with `/metrics` endpoint
+
+#### Metrics Structure
+The provided metrics follow a java formatted event:
+```
+"canary": "0",
+"correlationId": "3eb2ee40-5c22-11ec-bf1d-0284a1451db2",
+"responseTimeMs": 1191,
+"statusCode": 200
+```
+where:
+- canary: indicates if the event is associated with the canary URL
+- correlationId: indicates the correlationId assigned by Mule to the balanced request (not the one associated to the `/metrics` endpoint)
+- responseTimeMS: indicates the total response time (in millis) for the event. This is calculated as `(end time - start time)`. The start time is calculated as the moment when the policy receives the traffic. The end time is calculated as the moment when the policy receives a response from the underlying API.
+- statusCode: indicates the HTTP Status Code for the event
+
+#### *IMPORTANT*
+- Take into account that the underlying API shouldn't contain an endpoint called `/metrics`, otherwise that logic won't be executed and might interfere with existing processes. If your API already exposes an `/metrics`, please make sure to change the logic of this policy to rename the endpoint used to extract the metric
+- Take into account the current usage of your API, the metrics captured, the reporting tools in place, the existing policies applied (i.e. Rate Limiting) and the app config before enabling the metrics, as if implemented as they should, the policy will receive a lot of requests and generate a lot of events
+- The current implementation is not taking into account any strategy to clean the old events
+
+
 ### Limitations
 NOTE: The recommended approach to manage Canary Releases should be having a third party component, outside Anypoint Platform, specially designed to handle this kind of needs. For instance, nginx provides a module called [split clients](https://nginx.org/en/docs/http/ngx_http_split_clients_module.html?_ga=2.76046677.1103157284.1620664242-1521291711.1620664242 ), useful to assign percentages of traffic that we want to redirect to defined clients (hosts). The solution provided here is a custom solution, provided by Professional Services and and that may not have official product support.
 
@@ -94,56 +133,6 @@ If you want to use this solution anyway, this approach leads to the following pr
 - Adds environment promotion complexity as part of the CI/CD pipelines
 - Deprecation and Retirement becomes a time consuming task (more than usual!)
 - The underlying proxy logic is never used. ```<http-policy:execute-next />``` is never invoked.
-
-### Known Issues
-When applied to a Mule proxy in Cloudhub, the execution of the logic is carried out twice for the same request. This does not happen when the policy is applied to a mule app. This issue is under review. Runtime Fabric and Hybrid (on-prem) deployment models handle the request successfully.
-
-### Benchmark
-
-#### Application config
-
-| Deployment Model | Runtime Version | Worker Size | Workers |
-| ------ | ------ | ------ | ------ |
-| CloudHub (US East - Ohio - ) | 4.3.0 | 0.1 | 1 |
-
-
-#### Test #0 -  NO policy applied -
-
-##### Test suite configuration
-TO-DO
-
-
-##### Results
-
-| Avg  | Median | Min | Max | Error Rate | Throughput |
-| ------ | ------ | ------ | ------ | ------ | ------ |
-|  |  |  |  |  |  |
-
-#### Test #1
-
-##### Policy configuration
-TO-DO
-
-##### Test suite configuration
-TO-DO
-
-
-##### Results
-TO-DO
-
-
-#### Test #2
-
-##### Policy configuration
-TO-DO
-
-
-##### Test suite configuration
-TO-DO
-
-
-##### Results
-TO-DO
 
 
 ### Contribution

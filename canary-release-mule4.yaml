@@ -175,19 +175,19 @@ configuration:
     dependsOnKey: overrideOsSettings
     dependsOnValue: true
   - propertyName: captureUsageMetrics
-    name: Capture raw usage metrics?
+    name: Capture Raw Usage Metrics?
     description: Select this option to capture raw metrics around endpoints usage
     type: boolean
     optional: true
     defaultValue: false
   - propertyName: metricsOsIndex
     name: Index used to store the metrics
-    description: Expression used as index to store the metrics
+    description: Expression used as index to store the metrics. Default value generates a unique ID per event.
     type: expression
     optional: true
     sensitive: false
     allowMultiple: false
-    defaultValue: "#['metrics']"
+    defaultValue: "#[uuid()]"
     dependsOnKey: captureUsageMetrics
     dependsOnValue: true
   - propertyName: metricsOsPersistent
