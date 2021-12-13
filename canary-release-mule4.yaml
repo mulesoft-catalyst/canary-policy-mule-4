@@ -199,7 +199,7 @@ configuration:
     dependsOnKey: captureUsageMetrics
     dependsOnValue: true
   - propertyName: metricsOsTtl
-    name: Object Store's entry TTL
+    name: Metrics Object Store entry TTL
     description: The entry timeout. Default value is 1 (hour).
     type: int
     optional: false
@@ -209,7 +209,7 @@ configuration:
     dependsOnKey: captureUsageMetrics
     dependsOnValue: true
   - propertyName: metricsOsTtlUnit
-    name: Object Store's entry TTL unit
+    name: Metrics Object Store entry TTL unit
     description: The time unit. Default value is "HOURS".
     options:
     - name: DAYS
