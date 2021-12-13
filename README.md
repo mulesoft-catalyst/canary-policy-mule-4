@@ -134,7 +134,6 @@ If you want to use this solution anyway, this approach leads to the following pr
 - Deprecation and Retirement becomes a time consuming task (more than usual!)
 - The underlying proxy logic is never used. ```<http-policy:execute-next />``` is never invoked.
 
-
 ### Contribution
 
 Want to contribute? Great!
