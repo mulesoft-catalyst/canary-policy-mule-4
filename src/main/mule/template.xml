@@ -23,6 +23,11 @@ http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
         <os:object-store name="traffic" persistent="true" entryTtl="1" entryTtlUnit="HOURS" />
     {{/if}}
 
+    <!-- Metrics Object Store configuration -->
+    {{#if captureUsageMetrics}}
+        <os:object-store name="metrics" persistent="{{{metricsOsPersistent}}}" entryTtl="{{{metricsOsTtl}}}" entryTtlUnit="{{{metricsOsTtlUnit}}}" />
+    {{/if}}
+
     <http:request-config name="http-request-config" basePath="/" enableCookies="false">
         <http:request-connection host="{{{host}}}" port="{{{port}}}"
                                  protocol="{{{protocol}}}"/>
@@ -32,112 +37,163 @@ http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
                                  protocol="{{{protocolCanary}}}"/>
     </http:request-config>
 
-
     <http-policy:proxy name="{{{policyId}}}-custom-policy">
         <http-policy:source>
-            <set-variable value="{{{protocol}}}" variableName="protocol"/>
-            <set-variable value="{{{host}}}" variableName="host"/>
-            <set-variable value="{{{port}}}" variableName="port"/>
-            <set-variable value="{{{path}}}" variableName="path"/>
-            <set-variable value="{{{protocolCanary}}}" variableName="protocolCanary"/>
-            <set-variable value="{{{hostCanary}}}" variableName="hostCanary"/>
-            <set-variable value="{{{portCanary}}}" variableName="portCanary"/>
-            <set-variable value="{{{pathCanary}}}" variableName="pathCanary"/>
-            <logger message="Before creating weights array" level="DEBUG" category="com.mule.policies.canary" />
-            <set-variable value="#[%dw 2.0
-  output application/json
-  ---
-  [
-    {
-      url:  (vars.protocol ++'://'++ vars.host ++':'++ vars.port ++ vars.path) ,
-      weight: {{weight}}
-    },
-    {
-      url:  (vars.protocolCanary ++'://'++ vars.hostCanary ++':'++ vars.portCanary ++ vars.pathCanary) ,
-      weight: {{weightCanary}}
-    }
-  ] ]" variableName="weights"/>
-            <logger message='#[%dw 2.0 output application/json --- vars.weights]' level="DEBUG" category="com.mule.policies.canary" />
-            <try>
-              <os:retrieve key="currentUrl" target="currentUrl" objectStore="traffic"/>
-              <error-handler>
-                 <on-error-continue type="OS:KEY_NOT_FOUND" logException="false">
-                    <logger message="Non existing previous entries in traffic OS for currentUrl. Assuming this is the first call." level="DEBUG" category="com.mule.policies.canary" />
-                    <set-variable value='#[vars.weights[0].url]' variableName="currentUrl"/>
-                 </on-error-continue>
-              </error-handler>
-            </try>
-            <try>
-              <os:retrieve key="currentRouted" target="currentRouted" objectStore="traffic"/>
-              <error-handler>
-                 <on-error-continue type="OS:KEY_NOT_FOUND" logException="false">
-                    <logger message="Non existing previous entries in traffic OS for currentRouted. Assuming this is the first call." level="DEBUG" category="com.mule.policies.canary" />
-                    <set-variable value='#[0]' variableName="currentRouted"/>
-                 </on-error-continue>
-              </error-handler>
-            </try>
-          <!-- Decide URL to route the traffic to -->
-          <logger message='#[%dw 2.0 output application/json --- attributes]' level="DEBUG" category="com.mule.policies.canary" />
-          <set-variable value='#[%dw 2.0
-output application/json
-import * from dw::core::Arrays
-fun calculateMaximumAdmitedRequestsToCurrent()= (getCurrentWeightDetails(vars.weights).weight[0]/10)
-fun getCurrentWeightDetails(item)=item filter (value, index) -> (value.url as String == vars.currentUrl)
-fun getCurrentPositionInArray(weights)=weights indexWhere (item) -> item.url == getCurrentWeightDetails(weights)[0].url
-fun getNextWeightDetails(position)=vars.weights[(position+1)] default vars.weights[0]
-fun getFirstPositionInArray(weights)=weights[0]
----
-if ((vars.currentRouted) >= calculateMaximumAdmitedRequestsToCurrent())
-    getNextWeightDetails(getCurrentPositionInArray(vars.weights)) ++ {currentRouted: 0}
-else
-    getCurrentWeightDetails(vars.weights)[0] ++ {currentRouted: vars.currentRouted}]' variableName="destination"/>
-        <choice>
-          <when expression="#[%dw 2.0
-                              output application/json
-                              ---
-                              vars.destination.url contains ( vars.protocol ++'://'++ vars.host ++':'++ vars.port ++ vars.path ) ]">
-              <logger message="Routing to original" level="DEBUG" category="com.mule.policies.canary" />
-              <http:request config-ref="http-request-config"
-                            method="#[attributes.method]"
-                            path="#[%dw 2.0
-                                    import * from dw::core::URL
-                                    ---
-                                    parseURI(vars.destination.url).path]">
-                  <http:uri-params>#[attributes.uriParams]</http:uri-params>
-                  <http:query-params>#[attributes.queryParams]</http:query-params>
-                  <http:response-validator>
-                      <http:success-status-code-validator values="0..599"/>
-                  </http:response-validator>
-              </http:request>
-          </when>
-          <otherwise>
-            <logger message="Routing to canary" level="DEBUG" category="com.mule.policies.canary" />
-            <http:request config-ref="http-request-config-canary"
-                          method="#[attributes.method]"
-                          path="#[%dw 2.0
-                                  import * from dw::core::URL
+            <logger message="#[%dw 2.0 output application/json --- attributes   ]" level="DEBUG" category="com.mule.policies.canary" />
+            <!-- Start logic to decide if print metrics only -->
+            <choice>
+                <when expression="#[%dw 2.0
+                                  output application/java
                                   ---
-                                  parseURI(vars.destination.url).path]">
-                <http:uri-params>#[attributes.uriParams]</http:uri-params>
-                <http:query-params>#[attributes.queryParams]</http:query-params>
-                <http:response-validator>
-                    <http:success-status-code-validator values="0..599"/>
-                </http:response-validator>
-            </http:request>
-          </otherwise>
+                                  ['/metrics', '/favicon.ico'] contains attributes.rawRequestPath]">
+                    <logger message="Retrieving and printing stored metrics" level="DEBUG" category="com.mule.policies.canary" />
+                    <os:retrieve-all objectStore="metrics"/>
+                    <set-payload value="#[%dw 2.0 output application/json --- payload]"/>                              
+                </when>
+                <otherwise>    
+                    {{#if captureUsageMetrics}}
+                        <set-variable value="#[%dw 2.0 output application/java --- now()]" variableName="startTime"/>
+                        <set-variable value="0" variableName="canary"/>
+                    {{/if}}
+                    <set-variable value="{{{protocol}}}" variableName="protocol"/>
+                    <set-variable value="{{{host}}}" variableName="host"/>
+                    <set-variable value="{{{port}}}" variableName="port"/>
+                    <set-variable value="{{{path}}}" variableName="path"/>
+                    <set-variable value="{{{protocolCanary}}}" variableName="protocolCanary"/>
+                    <set-variable value="{{{hostCanary}}}" variableName="hostCanary"/>
+                    <set-variable value="{{{portCanary}}}" variableName="portCanary"/>
+                    <set-variable value="{{{pathCanary}}}" variableName="pathCanary"/>
+                    <logger message="Before creating weights array" level="DEBUG" category="com.mule.policies.canary" />
+                    <set-variable value="#[%dw 2.0
+          output application/json
+          ---
+          [
+            {
+              url:  (vars.protocol ++'://'++ vars.host ++':'++ vars.port ++ vars.path) ,
+              weight: {{weight}}
+            },
+            {
+              url:  (vars.protocolCanary ++'://'++ vars.hostCanary ++':'++ vars.portCanary ++ vars.pathCanary) ,
+              weight: {{weightCanary}}
+            }
+          ] ]" variableName="weights"/>
+                    <logger message='#[%dw 2.0 output application/json --- vars.weights]' level="DEBUG" category="com.mule.policies.canary" />
+                    <try>
+                      <os:retrieve key="currentUrl" target="currentUrl" objectStore="traffic"/>
+                      <error-handler>
+                         <on-error-continue type="OS:KEY_NOT_FOUND" logException="false">
+                            <logger message="Non existing previous entries in traffic OS for currentUrl. Assuming this is the first call." level="DEBUG" category="com.mule.policies.canary" />
+                            <set-variable value='#[vars.weights[0].url]' variableName="currentUrl"/>
+                         </on-error-continue>
+                      </error-handler>
+                    </try>
+                    <try>
+                      <os:retrieve key="currentRouted" target="currentRouted" objectStore="traffic"/>
+                      <error-handler>
+                         <on-error-continue type="OS:KEY_NOT_FOUND" logException="false">
+                            <logger message="Non existing previous entries in traffic OS for currentRouted. Assuming this is the first call." level="DEBUG" category="com.mule.policies.canary" />
+                            <set-variable value='#[0]' variableName="currentRouted"/>
+                         </on-error-continue>
+                      </error-handler>
+                    </try>
+                   <!-- Decide URL to route the traffic to -->
+                   <logger message='#[%dw 2.0 output application/json --- attributes]' level="DEBUG" category="com.mule.policies.canary" />
+                   <set-variable value='#[%dw 2.0
+        output application/json
+        import * from dw::core::Arrays
+        fun calculateMaximumAdmitedRequestsToCurrent()= (getCurrentWeightDetails(vars.weights).weight[0]/10)
+        fun getCurrentWeightDetails(item)=item filter (value, index) -> (value.url as String == vars.currentUrl)
+        fun getCurrentPositionInArray(weights)=weights indexWhere (item) -> item.url == getCurrentWeightDetails(weights)[0].url
+        fun getNextWeightDetails(position)=vars.weights[(position+1)] default vars.weights[0]
+        fun getFirstPositionInArray(weights)=weights[0]
+        ---
+        if ((vars.currentRouted) >= calculateMaximumAdmitedRequestsToCurrent())
+            getNextWeightDetails(getCurrentPositionInArray(vars.weights)) ++ {currentRouted: 0}
+        else
+            getCurrentWeightDetails(vars.weights)[0] ++ {currentRouted: vars.currentRouted}]' variableName="destination"/>
+                    <choice>
+                      <when expression="#[%dw 2.0
+                                          output application/json
+                                          ---
+                                          vars.destination.url contains ( vars.protocol ++'://'++ vars.host ++':'++ vars.port ++ vars.path ) ]">
+                          <logger message="Routing to original" level="DEBUG" category="com.mule.policies.canary" />
+                          <http:request config-ref="http-request-config"
+                                        method="#[attributes.method]"
+                                        path="#[%dw 2.0
+                                                import * from dw::core::URL
+                                                ---
+                                                parseURI(vars.destination.url).path]">
+                              <http:uri-params>#[attributes.uriParams]</http:uri-params>
+                              <http:query-params>#[attributes.queryParams]</http:query-params>
+                              <http:response-validator>
+                                  <http:success-status-code-validator values="0..599"/>
+                              </http:response-validator>
+                          </http:request>
+                      </when>
+                      <otherwise>
+                        <logger message="Routing to canary" level="DEBUG" category="com.mule.policies.canary" />
+                        <http:request config-ref="http-request-config-canary"
+                                      method="#[attributes.method]"
+                                      path="#[%dw 2.0
+                                              import * from dw::core::URL
+                                              ---
+                                              parseURI(vars.destination.url).path]">
+                            <http:uri-params>#[attributes.uriParams]</http:uri-params>
+                            <http:query-params>#[attributes.queryParams]</http:query-params>
+                            <http:response-validator>
+                                <http:success-status-code-validator values="0..599"/>
+                            </http:response-validator>
+                        </http:request>
+                        {{#if captureUsageMetrics}}
+                            <set-variable value="1" variableName="canary"/>
+                        {{/if}}
+                      </otherwise>
+                    </choice>
+                    <logger message="Updating values in traffic OS for next call" level="DEBUG" category="com.mule.policies.canary" />
+                    <os:store key="currentRouted" objectStore="traffic">
+                       <os:value>
+                           #[(vars.destination.currentRouted+1)]
+                       </os:value>
+                    </os:store>
+                    <set-variable value='#[vars.destination.url]' variableName="currentUrl"/>
+                    <os:store key="currentUrl" objectStore="traffic">
+                       <os:value>
+                           #[vars.currentUrl]
+                       </os:value>
+                    </os:store>
+                    {{#if captureUsageMetrics}}
+                            <set-variable value="#[%dw 2.0 output application/java --- now()]" variableName="endTime"/>
+                            <async>
+                                <flow-ref name="store-metrics"/>
+                            </async>
+                    {{/if}}
+            </otherwise>
         </choice>
-        <logger message="Updating values in traffic OS for next call" level="DEBUG" category="com.mule.policies.canary" />
-        <os:store key="currentRouted" objectStore="traffic">
-           <os:value>
-               #[(vars.destination.currentRouted+1)]
-           </os:value>
-        </os:store>
-        <set-variable value='#[vars.destination.url]' variableName="currentUrl"/>
-        <os:store key="currentUrl" objectStore="traffic">
-           <os:value>
-               #[vars.currentUrl]
-           </os:value>
-        </os:store>
+        <!-- End logic to decide if print metrics only -->
       </http-policy:source>
     </http-policy:proxy>
+
+    <flow name="store-metrics">
+        <choice>
+            <when expression="#[%dw 2.0
+                              output application/java
+                              ---
+                              !(['/metrics', '/favicon.ico'] contains attributes.rawRequestPath)]">
+                <logger message="Store metric event" level="DEBUG" category="com.mule.policies.canary" />
+                <os:store key="{{{metricsOsIndex}}}" objectStore="metrics">
+                    <os:value>
+                       #[%dw 2.0
+                        output application/java
+                        ---
+                        {
+                            correlationId: correlationId,
+                            statusCode: attributes.statusCode,
+                            responseTimeMs: (vars.endTime - vars.startTime) as Number {unit: "milliseconds"},
+                            canary: vars.canary
+                        }]
+                   </os:value>
+                </os:store>                         
+            </when>
+        </choice>
+    </flow>
 </mule>

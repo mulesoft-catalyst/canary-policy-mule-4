@@ -174,3 +174,62 @@ configuration:
     allowMultiple: false
     dependsOnKey: overrideOsSettings
     dependsOnValue: true
+  - propertyName: captureUsageMetrics
+    name: Capture Raw Usage Metrics?
+    description: Select this option to capture raw metrics around endpoints usage
+    type: boolean
+    optional: true
+    defaultValue: false
+  - propertyName: metricsOsIndex
+    name: Index used to store the metrics
+    description: Expression used as index to store the metrics. Default value generates a unique ID per event.
+    type: expression
+    optional: true
+    sensitive: false
+    allowMultiple: false
+    defaultValue: "#[uuid()]"
+    dependsOnKey: captureUsageMetrics
+    dependsOnValue: true
+  - propertyName: metricsOsPersistent
+    name: Is the Metrics Object Store persistent?
+    description: Select this option to enable a persistent Object Store for metrics. The default is false.
+    type: boolean
+    optional: false
+    defaultValue: false
+    dependsOnKey: captureUsageMetrics
+    dependsOnValue: true
+  - propertyName: metricsOsTtl
+    name: Metrics Object Store entry TTL
+    description: The entry timeout. Default value is 1 (hour).
+    type: int
+    optional: false
+    sensitive: false
+    allowMultiple: false
+    defaultValue: "1"
+    dependsOnKey: captureUsageMetrics
+    dependsOnValue: true
+  - propertyName: metricsOsTtlUnit
+    name: Metrics Object Store entry TTL unit
+    description: The time unit. Default value is "HOURS".
+    options:
+    - name: DAYS
+      value: "DAYS"
+    - name: HOURS
+      value: "HOURS"
+    - name: MICROSECONDS
+      value: "MICROSECONDS"
+    - name: MILISECONDS
+      value: "MILISECONDS"
+    - name: MINUTES
+      value: "MINUTES"
+    - name: NANOSECONDS
+      value: "NANOSECONDS"
+    - name: SECONDS
+      value: "SECONDS"
+    type: radio
+    defaultValue: HOURS
+    optional: false
+    sensitive: false
+    allowMultiple: false
+    dependsOnKey: captureUsageMetrics
+    dependsOnValue: true
