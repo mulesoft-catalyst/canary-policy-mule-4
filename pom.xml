@@ -7,11 +7,10 @@
     <groupId>{{ReplaceMeWithYourOrgID}}</groupId>
     <artifactId>canary-release-mule4</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-
     <name>canary-release-mule4</name>
     <description>A custom policy to support canary releases</description>
 
-    <packaging>mule-policy</packaging>  
+    <packaging>mule-policy</packaging>
 
     <properties>
         <mule.maven.plugin.version>3.3.6</mule.maven.plugin.version>
