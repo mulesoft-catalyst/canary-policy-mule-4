@@ -63,7 +63,7 @@ After publishing to Exchange, follow these steps to apply the policy to an exist
 | Protocol (Canary) | Details the protocol for the canary version |
 | Path (Canary) | Details the path for the canary version |
 | Weight (Canary) | Details the weight for the canary version. Represents a percentage that is calculated taking into account a sample of 10 requests. For example: 50 indicates that 5 requests out of 10 will be routed to this endpoint |
-| appliedOnApi | Select this option only if the policy is applied on the base API (original) instead of on a proxy. This forces the <http-policy:execute-next> directive. See https://docs.mulesoft.com/api-manager/2.x/custom-policy-4-reference#basic-xml-structure for further details. When this option is checked, metrics gathering won't works|
+| appliedOnApi | Select this option only if the policy is applied on the base API (original) instead of on a proxy. This forces the <http-policy:execute-next> directive. See https://docs.mulesoft.com/api-manager/2.x/custom-policy-4-reference#basic-xml-structure for further details. When this option is checked, metrics gathering won't work|
 | sessionStickinessSupport | Indicates if the session stickiness capability is enabled (TO-DO) |
 | Session Stickiness Header Expression | If session stickiness is enabled, this DW expression represents how to access the header that contains the key used to track the session stickiness (TO-DO) |
 | Override Object Store Settings? | Select this option to override the default Object Store. The default is false. |
