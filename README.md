@@ -63,7 +63,7 @@ After publishing to Exchange, follow these steps to apply the policy to an exist
 | Protocol (Canary) | Details the protocol for the canary version |
 | Path (Canary) | Details the path for the canary version |
 | Weight (Canary) | Details the weight for the canary version. Represents a percentage that is calculated taking into account a sample of 10 requests. For example: 50 indicates that 5 requests out of 10 will be routed to this endpoint |
-| appliedOnApi | Select this option only if the policy is applied on the base API (original) instead of on a proxy. This forces the <http-policy:execute-next> directive. See https://docs.mulesoft.com/api-manager/2.x/custom-policy-4-reference#basic-xml-structure for further details. When this option is checked, metrics gathering won't work|
+| appliedOnApi | Select this option only if the policy is applied on the base API (original) instead of on a proxy. This forces the <http-policy:execute-next> directive. See https://docs.mulesoft.com/api-manager/2.x/custom-policy-4-reference#basic-xml-structure for further details. When this option is checked, metrics gathering is disabled|
 | sessionStickinessSupport | Indicates if the session stickiness capability is enabled (TO-DO) |
 | Session Stickiness Header Expression | If session stickiness is enabled, this DW expression represents how to access the header that contains the key used to track the session stickiness (TO-DO) |
 | Override Object Store Settings? | Select this option to override the default Object Store. The default is false. |
@@ -91,7 +91,7 @@ In Debug mode, it will print the following checkpoints:
 - Flag indicating the Traffic Object Store will be updated
 
 ### Metrics
-The policy incorporates the possibility of collecting usage metrics to later be used in a Canary Analysis process. This option only works if the Canary is applied on top of a proxy.
+The policy incorporates the possibility of collecting usage metrics to later be used in a Canary Analysis process. This option is only available if the Canary is applied on top of a proxy.
 
 #### To enable the Metrics
 - Enable "Capture Raw Usage Metrics?" by clicking on the radio button, while applying the policy
@@ -99,6 +99,7 @@ The policy incorporates the possibility of collecting usage metrics to later be 
 
 | Parameter (Internal Name)| UI Name | Purpose |
 | ------ | ------ | ------ |
+| metricsEndpoint | Metrics Endpoint | Endpoint used to expose the collected metrics. Must start with a /. |
 | metricsOsIndex | Index used to store the metrics | Index used to store the metrics. By default uses a unique ID per event |
 | metricsOsPersistent | Is the Metrics Object Store persistent? | Flag to configure persistent OS |
 | metricsOsTtl | Metrics Object Store entry TTL | Time to live for the OS (this is applicable either for In-memory and Persistent OS) |
