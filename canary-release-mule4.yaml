@@ -109,6 +109,12 @@ configuration:
     allowMultiple: false
     minimumValue: 5
     maximumValue: 100
+  - propertyName: appliedOnApi
+    name: Applied on the base API?
+    description: Select this option only if the policy is applied on the base API (original) instead of on a proxy. This forces the <http-policy:execute-next> directive. See https://docs.mulesoft.com/api-manager/2.x/custom-policy-4-reference#basic-xml-structure for further details.
+    type: boolean
+    optional: true
+    defaultValue: false
   - propertyName: sessionStickinessSupport
     name: Support Session Stickness?
     description: Select this option to support session stickiness using an HTTP header
