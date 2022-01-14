@@ -22,13 +22,14 @@ There are no limitations imposed by the use of this policy regarding the deploym
 
 ![](./images/deployment.png "Deployment Architecture")
 
-From the above, a proxy is deployed on top of both versions (original and canary) in order to centralize communication, providing an abstraction and improving understanding from the point of view of networking and traffic management. Please see ["Limitations"](###Limitations) and ["Known Issues"](###Known-Issues) sections.
+From the above, a proxy is deployed on top of both versions (original and canary) in order to centralize communication, providing an abstraction and improving understanding from the point of view of networking and traffic management. Please see ["Limitations"](###Limitations).
 
 If you want to skip the extra layer added by the proxy, you can always apply the policy on top of the original (baseline) application:
 
 ![](./images/deployment-nr.png "Deployment Architecture - Not Recommended")
 
-This option requires to set an additional flag "appliedOnApi". Please see ["Usage"](###Usage).
+This option requires to set an additional flag "appliedOnApi". Please see ["Usage"](###Usage). Additionally, it is important to note that if this option is enabled, the collection of metrics does not work.
+
 
 But this approach may lead to a management nightmare, where deprecation and retirement of APIs become an almost impossible task. See ["Deprecation and Retirement"](###Deprecation-and-retirement) section.
 
@@ -62,7 +63,7 @@ After publishing to Exchange, follow these steps to apply the policy to an exist
 | Protocol (Canary) | Details the protocol for the canary version |
 | Path (Canary) | Details the path for the canary version |
 | Weight (Canary) | Details the weight for the canary version. Represents a percentage that is calculated taking into account a sample of 10 requests. For example: 50 indicates that 5 requests out of 10 will be routed to this endpoint |
-| appliedOnApi | Select this option only if the policy is applied on the base API (original) instead of on a proxy. This forces the <http-policy:execute-next> directive. See https://docs.mulesoft.com/api-manager/2.x/custom-policy-4-reference#basic-xml-structure for further details. |
+| appliedOnApi | Select this option only if the policy is applied on the base API (original) instead of on a proxy. This forces the <http-policy:execute-next> directive. See https://docs.mulesoft.com/api-manager/2.x/custom-policy-4-reference#basic-xml-structure for further details. When this option is checked, metrics gathering won't works|
 | sessionStickinessSupport | Indicates if the session stickiness capability is enabled (TO-DO) |
 | Session Stickiness Header Expression | If session stickiness is enabled, this DW expression represents how to access the header that contains the key used to track the session stickiness (TO-DO) |
 | Override Object Store Settings? | Select this option to override the default Object Store. The default is false. |
@@ -90,7 +91,7 @@ In Debug mode, it will print the following checkpoints:
 - Flag indicating the Traffic Object Store will be updated
 
 ### Metrics
-The policy incorporates the possibility of collecting usage metrics to later be used in a Canary Analysis process.
+The policy incorporates the possibility of collecting usage metrics to later be used in a Canary Analysis process. This option only works if the Canary is applied on top of a proxy.
 
 #### To enable the Metrics
 - Enable "Capture Raw Usage Metrics?" by clicking on the radio button, while applying the policy
@@ -136,7 +137,6 @@ If you want to use this solution anyway, this approach leads to the following pr
 - Extra component is required (proxy), adding more hops to the process -OPTIONAL if proxy approach was chosen-. In a typical API-Led approach, having an additional step on top of the existing 3 layers might be counterproductive with defined SLAs and SLOs
 - Adds environment promotion complexity as part of the CI/CD pipelines
 - Deprecation and Retirement becomes a time consuming task (more than usual!)
-- The underlying proxy logic is never used. ```<http-policy:execute-next />``` is never invoked.
 
 ### Contribution
 
