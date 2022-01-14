@@ -45,7 +45,7 @@ http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
                 <when expression="#[%dw 2.0
                                   output application/java
                                   ---
-                                  ['/metrics', '/favicon.ico'] contains attributes.rawRequestPath]">
+                                  ['{{{metricsEndpoint}}}', '/favicon.ico'] contains attributes.rawRequestPath]">
                     <logger message="Retrieving and printing stored metrics" level="DEBUG" category="com.mule.policies.canary" />
                     <os:retrieve-all objectStore="metrics"/>
                     <set-payload value="#[%dw 2.0 output application/json --- payload]"/>
@@ -182,7 +182,7 @@ http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
             <when expression="#[%dw 2.0
                               output application/java
                               ---
-                              !(['/metrics', '/favicon.ico'] contains attributes.rawRequestPath)]">
+                              !(['{{{metricsEndpoint}}}', '/favicon.ico'] contains attributes.rawRequestPath)]">
                 <logger message="Store metric event" level="DEBUG" category="com.mule.policies.canary" />
                 <os:store key="{{{metricsOsIndex}}}" objectStore="metrics">
                     <os:value>
