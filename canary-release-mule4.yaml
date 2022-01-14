@@ -186,6 +186,18 @@ configuration:
     type: boolean
     optional: true
     defaultValue: false
+    dependsOnKey: appliedOnApi
+    dependsOnValue: false
+  - propertyName: metricsEndpoint
+    name: Metrics Endpoint
+    description: Endpoint used to expose the collected metrics. Must start with a /.
+    type: string
+    optional: true
+    sensitive: false
+    allowMultiple: false
+    defaultValue: "/metrics"
+    dependsOnKey: captureUsageMetrics
+    dependsOnValue: true
   - propertyName: metricsOsIndex
     name: Index used to store the metrics
     description: Expression used as index to store the metrics. Default value generates a unique ID per event.
