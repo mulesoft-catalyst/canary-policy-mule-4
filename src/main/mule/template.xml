@@ -48,9 +48,9 @@ http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
                                   ['/metrics', '/favicon.ico'] contains attributes.rawRequestPath]">
                     <logger message="Retrieving and printing stored metrics" level="DEBUG" category="com.mule.policies.canary" />
                     <os:retrieve-all objectStore="metrics"/>
-                    <set-payload value="#[%dw 2.0 output application/json --- payload]"/>                              
+                    <set-payload value="#[%dw 2.0 output application/json --- payload]"/>
                 </when>
-                <otherwise>    
+                <otherwise>
                     {{#if captureUsageMetrics}}
                         <set-variable value="#[%dw 2.0 output application/java --- now()]" variableName="startTime"/>
                         <set-variable value="0" variableName="canary"/>
@@ -117,18 +117,22 @@ http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
                                           ---
                                           vars.destination.url contains ( vars.protocol ++'://'++ vars.host ++':'++ vars.port ++ vars.path ) ]">
                           <logger message="Routing to original" level="DEBUG" category="com.mule.policies.canary" />
-                          <http:request config-ref="http-request-config"
-                                        method="#[attributes.method]"
-                                        path="#[%dw 2.0
-                                                import * from dw::core::URL
-                                                ---
-                                                parseURI(vars.destination.url).path]">
-                              <http:uri-params>#[attributes.uriParams]</http:uri-params>
-                              <http:query-params>#[attributes.queryParams]</http:query-params>
-                              <http:response-validator>
-                                  <http:success-status-code-validator values="0..599"/>
-                              </http:response-validator>
-                          </http:request>
+                          {{#if appliedOnApi}}
+                              <http-policy:execute-next/>
+                          {{else}}
+                              <http:request config-ref="http-request-config"
+                                            method="#[attributes.method]"
+                                            path="#[%dw 2.0
+                                                    import * from dw::core::URL
+                                                    ---
+                                                    parseURI(vars.destination.url).path]">
+                                  <http:uri-params>#[attributes.uriParams]</http:uri-params>
+                                  <http:query-params>#[attributes.queryParams]</http:query-params>
+                                  <http:response-validator>
+                                      <http:success-status-code-validator values="0..599"/>
+                                  </http:response-validator>
+                              </http:request>
+                          {{/if}}
                       </when>
                       <otherwise>
                         <logger message="Routing to canary" level="DEBUG" category="com.mule.policies.canary" />
@@ -192,7 +196,7 @@ http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
                             canary: vars.canary
                         }]
                    </os:value>
-                </os:store>                         
+                </os:store>
             </when>
         </choice>
     </flow>
