@@ -9,6 +9,29 @@ standalone: true
 requiredCharacteristics: []
 providedCharacteristics: []
 configuration:
+  - propertyName: routingType
+    name: Canary Routing Type
+    description: Choose one of the available routing types
+    options:
+    - name: By Weight
+      value: "WEIGHT"
+    - name: By Header
+      value: "HEADER"
+    type: radio
+    defaultValue: WEIGHT
+    optional: false
+    sensitive: false
+    allowMultiple: false
+  - propertyName: canaryHeader
+    name: Canary Header
+    description: Header used to route the traffic to Canary. The absence of this header will route the traffic to the base (original) API. The value of the header is not considered.
+    defaultValue: 'X-Canary'
+    type: string
+    optional: true
+    sensitive: false
+    allowMultiple: false
+    dependsOnKey: routingType
+    dependsOnValue: "HEADER"
   - propertyName: host
     name: Host (Original)
     description: Host for original version
@@ -51,14 +74,16 @@ configuration:
     allowMultiple: false
   - propertyName: weight
     name: Weight (Original)
-    description: Weight
+    description: Weight. This parameter is not optional if routing by weight was selected. if you continue without setting this value, the execution will fail.
     defaultValue: 50
     type: int
-    optional: false
+    optional: true
     sensitive: false
     allowMultiple: false
     minimumValue: 5
     maximumValue: 100
+    dependsOnKey: routingType
+    dependsOnValue: "WEIGHT"
   - propertyName: hostCanary
     name: Host (Canary)
     description: Host for original version
@@ -101,36 +126,22 @@ configuration:
     allowMultiple: false
   - propertyName: weightCanary
     name: Weight (Canary)
-    description: Weight
+    description: Weight. This parameter is not optional if routing by weight was selected. if you continue without setting this value, the execution will fail.
     defaultValue: 50
     type: int
-    optional: false
+    optional: true
     sensitive: false
     allowMultiple: false
     minimumValue: 5
     maximumValue: 100
+    dependsOnKey: routingType
+    dependsOnValue: "WEIGHT"
   - propertyName: appliedOnApi
     name: Applied on the base API?
     description: Select this option only if the policy is applied on the base API (original) instead of on a proxy. This forces the <http-policy:execute-next> directive. See https://docs.mulesoft.com/api-manager/2.x/custom-policy-4-reference#basic-xml-structure for further details.
     type: boolean
     optional: true
     defaultValue: false
-  - propertyName: sessionStickinessSupport
-    name: Support Session Stickness?
-    description: Select this option to support session stickiness using an HTTP header
-    type: boolean
-    optional: true
-    defaultValue: false
-  - propertyName: sessionHeader
-    name: Session Stickiness Header Expression
-    description: Expresson used to parse the session header
-    type: expression
-    optional: true
-    sensitive: false
-    allowMultiple: false
-    defaultValue: "#[attributes.headers.'X-session-id']"
-    dependsOnKey: sessionStickinessSupport
-    dependsOnValue: true
   - propertyName: overrideOsSettings
     name: Override Object Store Settings?
     description: Select this option to override the default Object Store. The default is false.
@@ -152,7 +163,9 @@ configuration:
     optional: true
     sensitive: false
     allowMultiple: false
-    defaultValue: "1"
+    defaultValue: 1
+    minimumValue: 1
+    maximumValue: 1000
     dependsOnKey: overrideOsSettings
     dependsOnValue: true
   - propertyName: osTtlUnit
@@ -223,7 +236,9 @@ configuration:
     optional: false
     sensitive: false
     allowMultiple: false
-    defaultValue: "1"
+    defaultValue: 1
+    minimumValue: 1
+    maximumValue: 1000
     dependsOnKey: captureUsageMetrics
     dependsOnValue: true
   - propertyName: metricsOsTtlUnit

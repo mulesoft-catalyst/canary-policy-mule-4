@@ -1,9 +1,9 @@
 # Canary Policy for Mule 4
 A custom policy to perform canary releases, intercepting the incoming calls and deciding which implementation URL to route the call to. Applying this policy to your API or proxy you would be able to:
+  - Route the traffic based on weights or a custom defined header
   - Define an array of endpoints, with their weights
-  - Enable session stickiness (TO-DO), to keep record of previous redirections based on a customizable header
-  - Capture metrics for the incoming events
-  - Get the stored metrics
+  - Capture metrics for the incoming events (only if the policy is applied to a proxy)
+  - Get the stored metrics (only if the policy is applied to a proxy)
 
 ### Why?
 A canary release helps organizations to reduce the risks of introducing new versions of a software by incrementally rolling out traffic to the new version, improving the [observability](https://en.wikipedia.org/wiki/Observability) and limiting the impact of the new components over the existing service.
@@ -35,7 +35,7 @@ But this approach may lead to a management nightmare, where deprecation and reti
 
 ### Deprecation and retirement
 Ask yourself: What do I want to do to discontinue the original version of my API when the Canary version has been tested and is ready to be used as current version?
-Here are a series of strategies for that end:
+Here are a series of strategies for that end (when routing by weight is enabled):
 - "Increase the weight of my Canary version to 100%, so that the traffic is only redirected there". This is an option that the only thing it achieves is an ease in the configuration, but under no point of view it is the optimal solution, since adopted in a proxy, it will generate an inconsistency between the implementation url configured in the proxy and the real url. Even worse if this strategy is used when applying the policy on the original API (no proxy), since this component will not only consume unnecessary resources, but it cannot be removed to ensure the existence of the policy that makes the routing.
 - "Remove the policy from the Proxy and change the implementation url from original to canary". This is a valid option, but keep in mind that it depends on how the proxy is accessed, because it can mean a breaking change for the consumer. This option is very valid for when the canaries strategy is limited to deploying minor changes that do not impact the versioning strategy of the API spec (build numbers, for instance v1.1, v1.2, both under same path /v1).
 - "Remove the proxy, along with the policy": It is the cleanest way to proceed, but the most complex and risky. Requires that the canary application be redeployed first as the original app (if it is a non breaking change) or leave it as is (for major changes, breaking) and make the normal changes expected as part of the normal API SDLC
@@ -53,19 +53,19 @@ After publishing to Exchange, follow these steps to apply the policy to an exist
 
 | Parameter | Purpose |
 | ------ | ------ |
+| Canary Routing Type | Choose one of the available routing types for the canary. Routing "By header" will make that every request that contains the header to be routed to the specified canary. If the request does not contains the specified header, the routing will be sent to the Original (base) |
+| Canary Header | Header used to route the traffic to the Canary. The absence of this header will route the traffic to the base (original) API. The value of the header is not considered |
 | Host (Original) | Details the host for the original version. This should be the same as the one set on the implementation url if using a proxy |
 | Port (Original) | Details the port for the original version |
 | Protocol (Original) | Details the protocol for the original version |
 | Path (Original) | Details the path for the original version |
-| Weight (Original) | Details the weight for the original version. Represents a percentage that is calculated taking into account a sample of 10 requests. For example: 50 indicates that 5 requests out of 10 will be routed to this endpoint |
+| Weight (Original) | (Only applicable when routing type is "By Weight") Details the weight for the original version. Represents a percentage that is calculated taking into account a sample of 10 requests. For example: 50 indicates that 5 requests out of 10 will be routed to this endpoint |
 | Host (Canary) | Details the host for the canary version |
 | Port (Canary) | Details the port for the canary version |
 | Protocol (Canary) | Details the protocol for the canary version |
 | Path (Canary) | Details the path for the canary version |
-| Weight (Canary) | Details the weight for the canary version. Represents a percentage that is calculated taking into account a sample of 10 requests. For example: 50 indicates that 5 requests out of 10 will be routed to this endpoint |
+| Weight (Canary) | (Only applicable when routing type is "By Weight") Details the weight for the canary version. Represents a percentage that is calculated taking into account a sample of 10 requests. For example: 50 indicates that 5 requests out of 10 will be routed to this endpoint |
 | appliedOnApi | Select this option only if the policy is applied on the base API (original) instead of on a proxy. This forces the <http-policy:execute-next> directive. See https://docs.mulesoft.com/api-manager/2.x/custom-policy-4-reference#basic-xml-structure for further details. When this option is checked, metrics gathering is disabled|
-| sessionStickinessSupport | Indicates if the session stickiness capability is enabled (TO-DO) |
-| Session Stickiness Header Expression | If session stickiness is enabled, this DW expression represents how to access the header that contains the key used to track the session stickiness (TO-DO) |
 | Override Object Store Settings? | Select this option to override the default Object Store. The default is false. |
 | Is the Object Store persistent? | If checked, uses a persistent Object Store ) |
 | Object Store's entry TTL | The entry timeout. Default value is 1 (hour) ) |
@@ -106,7 +106,7 @@ The policy incorporates the possibility of collecting usage metrics to later be 
 | metricsOsTtlUnit | Metrics Object Store entry TTL unit | Time unit for the above TTL |
 
 #### To capture the stored Metrics
-Simply send a GET to the API with `/metrics` endpoint
+Simply send a GET to the endpoint assigned to interact with the metrics. By default, `/metrics`.
 
 #### Metrics Structure
 The provided metrics follow a java formatted event:
@@ -123,7 +123,7 @@ where:
 - statusCode: indicates the HTTP Status Code for the event
 
 #### *IMPORTANT*
-- Take into account that the underlying API shouldn't contain an endpoint called `/metrics`, otherwise that logic won't be executed and might interfere with existing processes. If your API already exposes an `/metrics`, please make sure to change the logic of this policy to rename the endpoint used to extract the metric
+- Take into account that the underlying API shouldn't contain an endpoint called `/metrics`, otherwise that logic won't be executed and might interfere with existing processes. If your API already exposes an `/metrics`, please make sure to assign a different endpoint used to extract the metrics
 - Take into account the current usage of your API, the metrics captured, the reporting tools in place, the existing policies applied (i.e. Rate Limiting) and the app config before enabling the metrics, as if implemented as they should, the policy will receive a lot of requests and generate a lot of events
 - The current implementation is not taking into account any strategy to clean the old events
 
