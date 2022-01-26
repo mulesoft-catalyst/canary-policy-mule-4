@@ -213,19 +213,22 @@ configuration:
     dependsOnValue: true
   - propertyName: metricsOsIndex
     name: Index used to store the metrics
-    description: Expression used as index to store the metrics. Default value generates a unique ID per event.
+    description: Dataweave expression used as index to store the metrics. Default value generates a unique ID per event.
     type: expression
     optional: true
     sensitive: false
     allowMultiple: false
-    defaultValue: "#[uuid()]"
+    defaultValue: "#[%dw 2.0
+                     output application/java
+                     ---
+                     uuid()]"
     dependsOnKey: captureUsageMetrics
     dependsOnValue: true
   - propertyName: metricsOsPersistent
     name: Is the Metrics Object Store persistent?
     description: Select this option to enable a persistent Object Store for metrics. The default is false.
     type: boolean
-    optional: false
+    optional: true
     defaultValue: false
     dependsOnKey: captureUsageMetrics
     dependsOnValue: true
@@ -233,7 +236,7 @@ configuration:
     name: Metrics Object Store entry TTL
     description: The entry timeout. Default value is 1 (hour).
     type: int
-    optional: false
+    optional: true
     sensitive: false
     allowMultiple: false
     defaultValue: 1
@@ -261,7 +264,7 @@ configuration:
       value: "SECONDS"
     type: radio
     defaultValue: HOURS
-    optional: false
+    optional: true
     sensitive: false
     allowMultiple: false
     dependsOnKey: captureUsageMetrics
