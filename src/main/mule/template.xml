@@ -47,7 +47,10 @@ http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
                                   output application/java
                                   ---
                                   ['{{{metricsEndpoint}}}', '/favicon.ico'] contains attributes.rawRequestPath]">
-                    <flow-ref name="get-metrics" />
+                    <logger message="captureUsageMetrics flag set to {{{captureUsageMetrics}}}" level="DEBUG" category="com.mule.policies.canary" />
+                    {{#if captureUsageMetrics}}
+                      <flow-ref name="get-metrics" />
+                    {{/if}}
                 </when>
                 <otherwise>
                    {{#if captureUsageMetrics}}
@@ -86,17 +89,19 @@ http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
                               ---
                               !(['{{{metricsEndpoint}}}', '/favicon.ico'] contains attributes.rawRequestPath)]">
                 <logger message="Store metric event" level="DEBUG" category="com.mule.policies.canary" />
-                <os:store key="{{{metricsOsIndex}}}" objectStore="metrics">
+                <set-variable value='#[%dw 2.0
+                 output application/java
+                 ---
+                 {
+                     correlationId: correlationId,
+                     statusCode: attributes.statusCode,
+                     responseTimeMs: (vars.endTime - vars.startTime) as Number {unit: "milliseconds"},
+                     canary: vars.canary
+                 }]' variableName="metricEvent"/>
+                <set-variable value="{{{metricsOsIndex}}}" variableName="metricsIndex"/>
+                <os:store key="#[vars.metricsIndex default uuid()]" objectStore="metrics">
                     <os:value>
-                       #[%dw 2.0
-                        output application/java
-                        ---
-                        {
-                            correlationId: correlationId,
-                            statusCode: attributes.statusCode,
-                            responseTimeMs: (vars.endTime - vars.startTime) as Number {unit: "milliseconds"},
-                            canary: vars.canary
-                        }]
+                       #[(vars.metricEvent)]
                    </os:value>
                 </os:store>
             </when>
@@ -104,7 +109,6 @@ http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
       </async>
     </sub-flow>
     <sub-flow name="get-metrics">
-      <logger message="Retrieving and printing stored metrics" level="DEBUG" category="com.mule.policies.canary" />
       <os:retrieve-all objectStore="metrics"/>
       <set-payload value="#[%dw 2.0 output application/json --- payload]"/>
     </sub-flow>
